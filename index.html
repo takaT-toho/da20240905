@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ショート読書</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1+Code:wght@100..700&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            /* font-family: Arial, sans-serif; */
+            font-family: "M PLUS 1 Code", monospace;
+            font-optical-sizing: auto;
+            font-weight: 500;
+            font-style: normal;
+            /* overflow: hidden; */
+        }
+        body {
+            /* 画像ファイルの指定 */
+            background-image: url('book-background.jpg');
+            
+            /* 画像を常に天地左右の中央に配置 */
+            background-position: center center;
+                
+            /* 画像をタイル状に繰り返し表示しない */
+            background-repeat: no-repeat;
+                
+            /* コンテンツの高さが画像の高さより大きい時、動かないように固定 */
+            background-attachment: fixed;
+                
+            /* 表示するコンテナの大きさに基づいて、背景画像を調整 */
+            background-size: cover;
+                
+            /* 背景画像が読み込まれる前に表示される背景のカラー */
+            background-color: #464646;
+        }
+        header {
+            background-color: #000;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            font-size: 24px;
+        }
+        .game-display {
+            position: relative;
+            height: 30vh;
+            padding: 50px 0;
+        }
+        .rail {
+            position: relative;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(
+                to bottom,
+                #000000e3 0%, /* グレーのスタート */
+                #333333 3%, /* グレーのエンド（上から3%） */
+                #000000e3 6%, /* 黒のスタート（上から6%） */
+                #000000e3 94%, /* 黒のエンド（下から6%） */
+                #333333 97%, /* グレーの再スタート（下から3%） */
+                #000000e3 100% /* グレーのエンド（下端） */
+            );
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        .phrase {
+            position: absolute;
+            /* right: -100%; */
+            top: 55%;
+            transform: translateY(-50%);
+            color: #fff;
+            font-size: 24px;
+            white-space: nowrap;
+            transition: right 5s linear;            
+            cursor: pointer;
+        }
+        .page {
+            overflow: visible;
+        }
+        .progress-container {
+            position: relative;
+            /* top: 9%; */
+            /* left: 40%; */
+            margin-left: 40%;
+            width: 60%;
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #333;
+            z-index: 11;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            /* background-color: #4CAF50; */ 
+            background-color: rgba(144, 238, 144, 0.8); /* ライトグリーンの背景色 */
+            box-shadow: 
+                0 0 15px rgba(144, 238, 144, 0.8),   /* ライトグリーンのシャドウ */
+                0 0 25px rgba(50, 205, 50, 0.7);      /* 明るい緑のシャドウ */
+         
+        }
+        .progress-bar.rank1 {
+            background-color: rgba(255, 223, 0, 0.8); /* 明るい黄色 */
+            box-shadow: 
+                0 0 20px rgba(255, 223, 0, 0.8),  /* 黄色いシャドウ */
+                0 0 30px rgba(255, 140, 0, 0.8),  /* オレンジ色のシャドウ */
+                0 0 40px rgba(255, 69, 0, 0.6);   /* 赤みがかったシャドウ */
+            /* animation: flicker 1s infinite alternate;
+            transition: width 0.3s; */
+        }
+        .progress-bar.rank2 {            
+            background-color: rgba(255, 87, 34, 0.9); /* より明るいオレンジ色 */
+            box-shadow: 
+                0 0 25px rgba(255, 87, 34, 0.9),   /* 強いオレンジ色のシャドウ */
+                0 0 35px rgba(255, 69, 0, 0.9),    /* 強い赤色のシャドウ */
+                0 0 50px rgba(255, 165, 0, 0.9);   /* 明るい黄色のシャドウ */
+        }
+        .progress-bar.rank3 {
+            background-color: rgba(255, 0, 0, 0.8); /* 真っ赤な背景色 */
+            box-shadow: 
+                0 0 20px rgba(255, 0, 0, 0.8),    /* 強い赤のシャドウ */
+                0 0 30px rgba(255, 69, 0, 0.7),   /* 赤みのあるオレンジのシャドウ */
+                0 0 40px rgba(139, 0, 0, 0.9);    /* 暗めの赤のシャドウ */
+        }
+        .progress-bar.rank4 {
+            background-color: rgba(100, 170, 220, 0.8); /* スチールブルーなどの冷たい色 */
+            box-shadow: 
+                0 0 15px rgba(100, 170, 220, 0.8),   /* 冷たい青のシャドウ */
+                0 0 25px rgba(100, 200, 250, 0.7);   /* 明るい青のシャドウ */
+
+        }
+        .progress-bar.rank5 {
+            background-color: rgba(255, 255, 255, 0.8); /* ベースは白 */
+            box-shadow: 
+                0 0 20px rgba(255, 0, 0, 0.8),     /* 赤 */
+                0 0 30px rgba(255, 165, 0, 0.8),   /* オレンジ */
+                0 0 40px rgba(255, 255, 0, 0.8),   /* 黄色 */
+                0 0 50px rgba(0, 255, 0, 0.8),     /* 緑 */
+                0 0 60px rgba(0, 0, 255, 0.8),     /* 青 */
+                0 0 70px rgba(75, 0, 130, 0.8),    /* インディゴ */
+                0 0 80px rgba(238, 130, 238, 0.8); /* 紫 */
+        }
+
+        .figure {
+            width: 50%;
+            padding: 20px;
+            margin: 30px auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            display: flex; /* Flexbox を使用 */
+            justify-content: center; /* 水平方向に中央揃え */
+            align-items: center; /* 垂直方向に中央揃え */
+        }
+
+        .figure img {
+            display: block; /* 画像の下に余白を追加しない */
+            max-width: 100%; /* 画像が親要素を超えないようにする */
+            height: auto; /* 画像の縦横比を保つ */
+        }
+
+        .show-image-button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 50px auto;
+        }
+
+        .show-image-button img {
+            width: 40px;
+            height: 40px;
+        }
+
+        .triangle {
+            position: absolute;
+            top: 70%;
+            left: calc(50% - 100px); /* Adjust this value to position the triangle */
+            width: 0;
+            height: 0;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            border-right: 20px solid lightgreen; /* Same color as the button background */
+            /* transform: translateY(-50%); */
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .triangle:hover {
+            border-right-color: rgba(183, 244, 183, 0.8);
+        }
+
+        .triangle:active {
+            /* Add styles for the triangle when it's clicked */
+            border-right-color: darkgreen; /* Example: change the color when clicked */
+        }
+
+        .save-button {
+            position: relative;
+            margin-top: 30px;
+            margin-left: calc(50% - 50px);
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #083308e7;
+            background-color: #555;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            outline: none;
+            box-shadow: inset -4px -4px 10px #222, inset 4px 4px 10px #666;
+            transition: all 0.3s ease;
+            background-color: lightgreen;
+        }
+
+        .save-button:hover {
+            background-color: rgba(158, 255, 158, 0.8);
+        }
+
+        .save-button:active {
+            box-shadow: inset 4px 4px 10px #222, inset -4px -4px 10px #666;
+            transform: scale(0.85);
+        }
+
+        .my-phrase-list {
+            position: relative;
+            margin-left: 10%;
+            width: 80%;
+            padding: 10px;
+            margin: auto;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 20;
+            overflow-y: auto;
+        }
+        .my-phrase-list p {
+            margin: 10px 20px;
+            font-size: 14px;
+        }
+        .book-icon {
+            position: absolute;
+            left: 80px;
+            top: 30%;
+            font-size: 40px;
+            color: #fff;
+            transform-origin: center;
+            z-index: 15;
+            cursor: pointer;
+        }
+        .score {
+            position: absolute;
+            left: 20px;
+            top: 33%;
+            color: #fff;
+            font-size: 40px;
+        }
+        @keyframes flame {
+            0% {
+                color: #fff;
+                transform: scale(1);
+                text-shadow: 0 0 0 rgba(255, 0, 0, 0);
+            }
+            50% {
+                color: #ff4500; /* 赤からオレンジの色 */
+                transform: scale(1.5);
+                text-shadow: 0 0 10px rgba(255, 69, 0, 0.8); /* 火のような光の効果 */
+            }
+            100% {
+                color: #fff;
+                transform: scale(1);
+                text-shadow: 0 0 0 rgba(255, 0, 0, 0);
+            }
+        }
+
+        @keyframes fadeOutToTop {
+            to {
+                opacity: 0;
+                transform: translateY(-100px) rotate(360deg) scale(0.5);
+            }
+        }
+        @keyframes fadeOutToBottom {
+            to {
+                opacity: 0;
+                transform: translateY(-100px) scale(0.1);
+            }
+        }
+        @keyframes fadeOutToLeft {
+            to {
+                opacity: 0;
+                transform: translateX(-100%) scale(0.1);
+            }
+        }
+        @keyframes drumBeatAndFall {
+            0% {
+                transform: translateY(0); /* 初期位置 */
+            }
+            25% {
+                transform: translateY(-10px); /* 上に跳ね上がる */
+            }
+            50% {
+                transform: translateY(10px); /* 下に振動 */
+            }
+            75% {
+                transform: translateY(-5px); /* もう一度上に跳ね上がる */
+            }
+            100% {
+                transform: translateY(200px); /* 下に落下 */
+                opacity: 0; /* 不透明度を0にする */
+            }
+        }
+
+        .flame-container {
+            position: absolute;
+            left: 52px;
+            top: 39%;
+            width: 80px;
+            height: 110px;
+        }
+
+        .flame-base, .flame-mid, .flame-top {
+            left: 55px;
+            position: absolute;
+            transform: translateX(-50%);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            z-index: 10;
+        }
+
+        .flame-base {
+            top: -43%;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(to top, #ff4500, #ff7800);
+            animation: flicker 3s infinite alternate;
+        }
+
+        .flame-mid {
+            top: -25%;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(to top, #ff7800, #ffa500);
+            animation: flicker 4s infinite alternate 0.5s;
+        }
+
+        .flame-top {
+            top: -8%;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(to top, #ffa500, #ffff00);
+            animation: flicker 5s infinite alternate 1s;
+        }
+
+        @keyframes flicker {
+            0%, 100% {
+                transform: translateX(-50%) translateY(0) scale(1);
+                opacity: 1;
+            }
+            25% {
+                transform: translateX(-51%) translateY(-1px) scale(1.02);
+                opacity: 0.8;
+            }
+            50% {
+                transform: translateX(-49%) translateY(1px) scale(0.98);
+                opacity: 0.9;
+            }
+            75% {
+                transform: translateX(-52%) translateY(-2px) scale(1.03);
+                opacity: 0.75;
+            }
+        }
+
+        .arrow {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 24px;
+        }
+        .arrow:hover {
+            background-color: rgba(78, 77, 77, 0.5);
+        }
+
+        .left-arrow {
+            left: 10px;
+        }
+
+        .right-arrow {
+            right: 10px;
+        }
+
+        .star {
+            position: absolute;
+            top: -50px;
+            left: -50px;
+            width: 5px;
+            height: 5px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6),
+                        0 0 30px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            animation: shooting-star 3s infinite ease-in-out;
+        }
+
+        @keyframes shooting-star {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            70% {
+                transform: translate(-100vw, 100vh) scale(1.5);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translate(-200vw, 200vh) scale(2);
+                opacity: 0;
+                background-color: yellow;
+                box-shadow: 0 0 30px rgba(255, 255, 0, 0.8), 0 0 50px rgba(255, 255, 0, 0.6),
+                            0 0 70px rgba(255, 255, 0, 0.4), 0 0 100px rgba(255, 255, 0, 0.2);
+            }
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6),
+                            0 0 30px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(255, 255, 255, 1), 0 0 40px rgba(255, 255, 255, 0.8),
+                            0 0 60px rgba(255, 255, 255, 0.6), 0 0 80px rgba(255, 255, 255, 0.4);
+            }
+        }
+
+
+    </style>
+</head>
+<body>
+    <header>ショート読書 <span style="font-size: medium;">- <span id="header-page">1</span> ページ -</span></header>
+    <main>
+        <div class="game-display">
+            <div class="progress-container">
+                <div class="progress-bar"></div>
+            </div>            
+            <div class="rail"></div>
+            <div class="book-icon" id="book-icon">
+                📖                                           
+            </div>
+            <div class="flame-container">
+                <div class="flame-base"></div>
+                <div class="flame-mid"></div>
+                <div class="flame-top"></div>
+            </div>
+            <div class="score">0</div>
+            <div class="triangle" id="triangle"></div>
+            <button class="save-button">保存</button>              
+
+            <!-- 矢印ボタン -->
+            <div class="arrow left-arrow">&#9664;</div>
+            <div class="arrow right-arrow">&#9654;</div>
+              
+        </div>
+        <div class="page" id="page1" hidden>
+            Webデザインとユーザーエクスペリエンス(UX)は密接に関連しています。
+            成功するためには、両者のバランスを取ることが重要です。
+            以下に、両立のための戦略を解説します。
+
+            【WebデザインとUXの基本概念】
+            Webデザインは視覚的な要素に焦点を当てます。
+            レイアウト、色、フォントなどが含まれます。
+            一方、UXはユーザーの体験を重視します。
+            使いやすさ、直感性、満足度が中心です。
+
+            【両立のための戦略】
+            1. ユーザー中心のデザイン: ユーザーのニーズを理解するリサーチが必要です。
+            フィードバック収集とユーザビリティテストで改善を加えます。
+
+            2. ビジュアルと機能の調和: 美しいデザインと使いやすさを両立させます。
+            視覚的魅力と機能性を兼ね備えたデザインが求められます。
+
+            3. レスポンシブデザイン: すべてのデバイスで適切に表示されるようにします。
+            画面サイズに応じた調整が必要です。
+
+            4. 一貫性のあるデザインシステム: スタイルガイドやコンポーネントライブラリを用います。
+            一貫したビジュアルとインタラクションを提供します。
+
+            5. フィードバックと改善: ユーザーからのフィードバックを取り入れます。
+            定期的なテストとデータ分析で、デザインを改善します。
+
+            【まとめ】
+            デザインとUXの両立には、視覚的魅力と使いやすさのバランスが必要です。
+            ユーザー中心のアプローチとレスポンシブデザインが重要です。
+            一貫性を保ち、継続的な改善で質を高めましょう。
+        </div>        
+        <div class="page" id="page2" hidden>
+            【アジャイル開発における品質確保のポイント】
+            アジャイル開発では、スピードと品質の両立が重要です。
+            短期間の反復開発と、テスト駆動開発(TDD)、継続的インテグレーション/デリバリー(CI/CD)などの手法により、高品質な製品を迅速に開発します。
+            また、ペアプログラミングやクロスファンクショナルチームによる協働も効果的です。
+            ユーザーフィードバックを迅速に反映し、品質を継続的に改善していくことが大切です。
+
+            より具体的に各ポイントを説明すると、以下のようになります。
+
+            1. 短期間の反復開発: 短い期間で機能を開発し、テストを繰り返すことで、品質を確保します。
+            2. テスト駆動開発(TDD): 開発の初期段階からテストコードを作成し、バグの早期発見を目指します。
+            3. 継続的インテグレーション/デリバリー(CI/CD): コードの変更を自動でビルド・テストし、迅速なリリースを実現します。
+            4. ペアプログラミング: 2人でコーディングすることで、コードレビューを同時に行い、品質向上に繋がります。
+            5. クロスファンクショナルチーム: 異なる役割のメンバーが協力し、早い段階から品質に関する議論を行います。
+            6. ユーザーフィードバック: ユーザーからのフィードバックを基に、製品を改善していきます。
+            
+            これらの手法を組み合わせることで、アジャイル開発においても高い品質を確保することができます。
+        </div>
+        <button id="toggleButton" class="show-image-button">
+            <div style="margin-right: 15px; font-size: 16px; color: white;">▼ 図表示</div>
+            <img id="icon" src="show_icon.jpg" alt="表示アイコン">
+        </button>
+        <div class="figure" id="image" style="display: none;">
+            <img src="graph1.jpg" alt="Graph">
+        </div>
+        <div class="my-phrase-list">
+            <h3 style="text-align: center;">マイフレーズ</h3>
+        </div>
+
+        <audio id="bazookaSound" src="ichigeki.mp3" hidden></audio>
+        <audio id="syusokuSound" src="syusoku.mp3" hidden></audio>
+        <audio id="biyonSound" src="biyon.mp3" hidden></audio>
+        <audio id="kosokuSound" src="kosoku.mp3" hidden></audio>
+        <audio id="taihouSound" src="taihou.mp3" hidden></audio>
+    </main>
+
+
+    <script>
+        let currentPage = 0;
+        const rail = document.querySelector('.rail');
+        const saveButton = document.querySelector('.save-button');
+        const triangleButton = document.getElementById('triangle');
+        const leftArrow = document.querySelector('.left-arrow');
+        const rightArrow = document.querySelector('.right-arrow');
+        const myPhraseList = document.querySelector('.my-phrase-list');
+        const bookIcon = document.querySelector('.book-icon');
+        const scoreElement = document.querySelector('.score');
+        const pageNameList = ["page1", "page2"];
+        let text = document.getElementById(pageNameList[currentPage]).textContent;
+        let sentences = text.match(/[^。！？]+[。！？]/g);
+        let currentSentence = 0;
+        let score = 0;
+
+        function playBazookaSound() {
+            let bazookaSound = document.getElementById('bazookaSound');
+            bazookaSound.currentTime = 0; // 再生位置をリセット
+            bazookaSound.play(); // 音を再生
+        }
+
+        function playSyusokuSound() {
+            let syusokuSound = document.getElementById('syusokuSound');
+            syusokuSound.currentTime = 0; // 再生位置をリセット
+            syusokuSound.play(); // 音を再生
+        }
+
+        function playBiyonSound() {
+            let biyonSound = document.getElementById('biyonSound');
+            biyonSound.currentTime = 0; // 再生位置をリセット
+            biyonSound.play(); // 音を再生
+        }
+
+        function playKosokuSound() {
+            let kosokuSound = document.getElementById('kosokuSound');
+            kosokuSound.currentTime = 0; // 再生位置をリセット
+            kosokuSound.play(); // 音を再生
+        }
+
+        function playTaihouSound() {
+            let taihouSound = document.getElementById('taihouSound');
+            taihouSound.currentTime = 0; // 再生位置をリセット
+            taihouSound.play(); // 音を再生
+        }
+
+        leftArrow.handleArrowClick = function() {
+            currentSentence = 0;
+            currentPage--;
+            if (currentPage >= pageNameList.length) {
+                currentPage = 0;
+            } else if (currentPage < 0) {
+                currentPage = 0;
+            }
+            document.getElementById("header-page").textContent = currentPage + 1;
+            text = document.getElementById(pageNameList[currentPage]).textContent;
+            sentences = text.match(/[^。！？]+[。！？]/g);
+
+            const currentPhrase = rail.querySelector('.phrase');
+            if (currentPhrase) {
+                currentPhrase.style.animation = 'fadeOutToLeft 1s forwards';
+                // ページめくりの音
+                currentPhrase.handleAnimationEnd = function() {
+                    if (currentPhrase.parentNode === rail) {
+                        rail.removeChild(currentPhrase);
+                        setTimeout(animatePhrase, 100); // 次のフレーズのタイミングを調整
+                    }
+                    currentPhrase.removeEventListener('animationend', currentPhrase.handleAnimationEnd);
+                }
+                
+                // アニメーションが終了したらフレーズを削除し、次のフレーズを表示
+                currentPhrase.addEventListener('animationend', currentPhrase.handleAnimationEnd);
+            }
+
+            // ページ番号が点滅するアニメーション
+        }
+
+        rightArrow.handleArrowClick = function() {
+            currentSentence = 0;
+            currentPage++;
+            if (currentPage >= pageNameList.length) {
+                currentPage = 0;
+            } else if (currentPage < 0) {
+                currentPage = 0;
+            }
+            document.getElementById("header-page").textContent = currentPage + 1;
+            text = document.getElementById(pageNameList[currentPage]).textContent;
+            sentences = text.match(/[^。！？]+[。！？]/g);
+
+            const currentPhrase = rail.querySelector('.phrase');
+            if (currentPhrase) {
+                currentPhrase.style.animation = 'fadeOutToLeft 1s forwards';
+                currentPhrase.handleAnimationEnd = function() {
+                    if (currentPhrase.parentNode === rail) {
+                        rail.removeChild(currentPhrase);
+                        setTimeout(animatePhrase, 100); // 次のフレーズのタイミングを調整
+                    }
+                    currentPhrase.removeEventListener('animationend', currentPhrase.handleAnimationEnd);
+                }
+                
+                // アニメーションが終了したらフレーズを削除し、次のフレーズを表示
+                currentPhrase.addEventListener('animationend', currentPhrase.handleAnimationEnd);
+            }
+        }
+
+        leftArrow.addEventListener('click', leftArrow.handleArrowClick);
+        rightArrow.addEventListener('click', rightArrow.handleArrowClick);
+
+        function handleClick() {
+            const currentPhrase = rail.querySelector('.phrase');
+            if (currentPhrase) {
+                const savedPhrase = document.createElement('p');
+                savedPhrase.textContent = currentPhrase.textContent;
+                myPhraseList.appendChild(savedPhrase);
+                
+                // フェードアウトアニメーション
+                currentPhrase.style.animation = 'fadeOutToTop 1s forwards';
+
+                playBiyonSound();
+
+                currentPhrase.handleAnimationEnd = function() {
+                    if (currentPhrase.parentNode === rail) {
+                        rail.removeChild(currentPhrase);
+                        currentSentence++;
+                        setTimeout(animatePhrase, 100); // 次のフレーズのタイミングを調整
+                    }
+                    currentPhrase.removeEventListener('animationend', currentPhrase.handleAnimationEnd);
+                }
+                
+                // アニメーションが終了したらフレーズを削除し、次のフレーズを表示
+                currentPhrase.addEventListener('animationend', currentPhrase.handleAnimationEnd);
+
+                updateScore(); // スコアを更新
+            }
+        }
+
+
+        function animatePhrase() {
+            if (currentSentence >= sentences.length) {
+                // ページ終了の操作を入れる
+                /////////////////////////////////////////////////////
+                ////////////////////////////////////////////////////
+                currentSentence = 0;
+                currentPage++;
+                if (currentPage >= pageNameList.length) {
+                    currentPage = 0;
+                }
+                document.getElementById("header-page").textContent = currentPage + 1;
+                text = document.getElementById(pageNameList[currentPage]).textContent;
+                sentences = text.match(/[^。！？]+[。！？]/g);
+            }
+
+            const phrase = document.createElement('div');
+            phrase.className = 'phrase';
+            phrase.textContent = sentences[currentSentence];
+            rail.appendChild(phrase);
+
+            // フレーズの幅を取得
+            const phraseWidth = phrase.clientWidth;
+            // フレーズを移動させるための距離
+            const railWidth = rail.clientWidth + phraseWidth;
+            // フレーズの移動速度（px/s）
+            const speed = 300;
+            // 移動時間 = フレーズの幅 + 画面の幅 / 速度
+            const duration = railWidth / speed;
+            phrase.style.transition = 'none';
+            phrase.style.right = `-${phraseWidth}px`;
+
+            // 少し遅れてフレーズを流す
+            setTimeout(() => {
+                // 動的に移動時間を設定
+                phrase.style.transition = `right ${duration}s linear`;
+                phrase.style.right = `${rail.clientWidth}px`;
+            }, 50);
+
+            // フレーズをクリックで保存
+            phrase.addEventListener('click', handleClick);
+
+            phrase.handleTransitionEnd = function() {
+                if (phrase.parentNode === rail) {
+                    rail.removeChild(phrase);
+                    currentSentence++;
+                    setTimeout(animatePhrase, 100); // 次のフレーズのタイミングを調整
+                }
+                phrase.removeEventListener('transitionend', phrase.handleTransitionEnd);
+            }
+
+            // フレーズのアニメーション終了後に削除
+            phrase.addEventListener('transitionend', phrase.handleTransitionEnd);
+        }        
+
+        animatePhrase();
+
+        const progressBar = document.querySelector('.progress-bar');
+        // const totalSentences = sentences.length;
+        const totalSentences = 5;
+
+        function updateProgress() {
+            let progressPercentage = (score / totalSentences) * 100;
+            if (progressPercentage >= 600) {
+                createShootingStars();
+            } else if (progressPercentage > 500) {
+                progressPercentage -= 500;
+                progressBar.classList.remove("rank4");
+                progressBar.classList.add("rank5");
+            } else if (progressPercentage > 400) {
+                progressPercentage -= 400;
+                progressBar.classList.remove("rank3");
+                progressBar.classList.add("rank4");
+            } else if (progressPercentage > 300) {
+                progressPercentage -= 300;
+                progressBar.classList.remove("rank2");
+                progressBar.classList.add("rank3");
+            } else if (progressPercentage > 200) {
+                progressPercentage -= 200;
+                progressBar.classList.remove("rank1");
+                progressBar.classList.add("rank2");
+            } else if (progressPercentage > 100) {
+                progressPercentage -= 100;
+                progressBar.classList.add("rank1");
+            }
+            progressBar.style.width = `${progressPercentage}%`;
+        }
+
+        function updateScore() {
+            score++;
+            scoreElement.textContent = score;
+            updateProgress();
+            animateFlame();
+        }
+
+        function animateFlame() {
+            scoreElement.style.animation = 'flame 1s';
+            setTimeout(() => {
+                scoreElement.style.animation = '';
+            }, 500);
+        }
+
+        triangleButton.addEventListener('click', () => {
+            const currentPhrase = rail.querySelector('.phrase');
+            if (currentPhrase) {
+                currentPhrase.style.animation = 'fadeOutToLeft 1s forwards';
+
+                // シューっという音が出る
+                playKosokuSound();
+
+                currentPhrase.handleAnimationEnd = function() {
+                    if (currentPhrase.parentNode === rail) {
+                        rail.removeChild(currentPhrase);
+                        currentSentence++;
+                        setTimeout(animatePhrase, 100); // 次のフレーズのタイミングを調整
+                    }
+                    currentPhrase.removeEventListener('animationend', currentPhrase.handleAnimationEnd);
+                }
+
+                // アニメーションが終了したらフレーズを削除し、次のフレーズを表示
+                currentPhrase.addEventListener('animationend', currentPhrase.handleAnimationEnd);
+            }
+        });
+
+        saveButton.addEventListener('click', () => {
+            const currentPhrase = rail.querySelector('.phrase');
+            if (currentPhrase) {
+                const savedPhrase = document.createElement('p');
+                savedPhrase.textContent = currentPhrase.textContent;
+                myPhraseList.appendChild(savedPhrase);
+                currentPhrase.style.animation = 'fadeOutToBottom 1s forwards';
+
+                // playBazookaSound();
+                playSyusokuSound();
+
+                currentPhrase.handleAnimationEnd = function() {
+                    if (currentPhrase.parentNode === rail) {
+                        rail.removeChild(currentPhrase);
+                        currentSentence++;
+                        setTimeout(animatePhrase, 100); // 次のフレーズのタイミングを調整
+                    }
+                    currentPhrase.removeEventListener('animationend', currentPhrase.handleAnimationEnd);
+                }
+
+                // アニメーションが終了したらフレーズを削除し、次のフレーズを表示
+                currentPhrase.addEventListener('animationend', currentPhrase.handleAnimationEnd);
+
+                updateScore();
+            }
+        });
+
+        bookIcon.addEventListener('click', () => {
+            const currentPhrase = rail.querySelector('.phrase');
+            if (currentPhrase) {
+                const savedPhrase = document.createElement('p');
+                savedPhrase.textContent = currentPhrase.textContent;
+                myPhraseList.appendChild(savedPhrase);
+                currentPhrase.style.animation = 'drumBeatAndFall 1s ease-in-out';
+
+                playTaihouSound();
+
+                currentPhrase.handleAnimationEnd = function() {
+                    if (currentPhrase.parentNode === rail) {
+                        rail.removeChild(currentPhrase);
+                        currentSentence++;
+                        setTimeout(animatePhrase, 100); // 次のフレーズのタイミングを調整
+                    }
+                    currentPhrase.removeEventListener('animationend', currentPhrase.handleAnimationEnd);
+                }
+
+                // アニメーションが終了したらフレーズを削除し、次のフレーズを表示
+                currentPhrase.addEventListener('animationend', currentPhrase.handleAnimationEnd);
+
+                updateScore();
+            }
+
+        })
+            
+
+        function createShootingStar() {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            document.body.appendChild(star);
+
+            // ランダムな位置から始めるように調整
+            const startX = Math.random() * window.innerWidth;
+            const startY = Math.random() * window.innerHeight;
+            star.style.top = `${startY}px`;
+            star.style.left = `${startX}px`;
+
+            const randomDelay = Math.random() * 5;
+            star.style.animationDelay = `${randomDelay}s`;
+
+            setTimeout(() => {
+                star.remove();
+            }, 6000); // 6秒後に流れ星を消す
+        }
+
+        function createShootingStars() {
+            setInterval(createShootingStar, 1); // 0.2秒ごとに流れ星を作成し、量を増やす
+        }
+
+        document.getElementById('toggleButton').addEventListener('click', function() {
+            const image = document.getElementById('image');
+            const icon = document.getElementById('icon');
+            
+            // 画像の表示/非表示を切り替える
+            if (image.style.display === 'none') {
+                image.style.display = 'block';
+                icon.src = 'hide_icon.jpg';
+            } else {
+                image.style.display = 'none';
+                icon.src = 'show_icon.jpg';
+            }
+        });
+
+    </script>
+</body>
+</html>
+
