@@ -553,6 +553,8 @@
         </div>
 
         <audio id="bazookaSound" src="ichigeki.mp3" hidden></audio>
+        <audio id="ichigeki2Sound" src="ichigeki2.mp3" hidden></audio>
+        <audio id="ichigeki3Sound" src="ichigeki3.mp3" hidden></audio>
         <audio id="syusokuSound" src="syusoku.mp3" hidden></audio>
         <audio id="biyonSound" src="biyon.mp3" hidden></audio>
         <audio id="kosokuSound" src="kosoku.mp3" hidden></audio>
@@ -577,6 +579,30 @@
         let sentences = text.match(/[^。！？]+[。！？]/g);
         let currentSentence = 0;
         let score = 0;
+
+        function playBazookaSound() {
+            let bazookaSound = document.getElementById('bazookaSound');
+            bazookaSound.currentTime = 0; // 再生位置をリセット
+            bazookaSound.play(); // 音を再生
+        }
+
+        function playIchigeki2Sound() {
+            let ichigeki2Sound = document.getElementById('ichigeki2Sound');
+            ichigeki2Sound.currentTime = 0; // 再生位置をリセット
+            ichigeki2Sound.play(); // 音を再生
+        }
+
+        function playIchigeki3Sound() {
+            let ichigeki3Sound = document.getElementById('ichigeki3Sound');
+            ichigeki3Sound.currentTime = 0; // 再生位置をリセット
+            ichigeki3Sound.play(); // 音を再生
+        }
+
+        function playRandomSound() {
+            const sounds = [playBazookaSound, playIchigeki2Sound, playIchigeki3Sound, playSyusokuSound, playSyusokuSound, playSyusokuSound];
+            const randomIndex = Math.floor(Math.random() * sounds.length); // 0~n の間でランダムに選ぶ
+            sounds[randomIndex](); // ランダムに選ばれた関数を実行
+        }
 
         function playBazookaSound() {
             let bazookaSound = document.getElementById('bazookaSound');
@@ -722,9 +748,6 @@
 
         function animatePhrase() {
             if (currentSentence >= sentences.length) {
-                // ページ終了の操作を入れる
-                /////////////////////////////////////////////////////
-                ////////////////////////////////////////////////////
                 currentSentence = 0;
                 currentPage++;
                 if (currentPage >= pageNameList.length) {
@@ -851,8 +874,7 @@
                 myPhraseList.appendChild(savedPhrase);
                 currentPhrase.style.animation = 'fadeOutToBottom 1s forwards';
 
-                // playBazookaSound();
-                playSyusokuSound();
+                playRandomSound();
 
                 currentPhrase.handleAnimationEnd = function() {
                     if (currentPhrase.parentNode === rail) {
@@ -938,4 +960,3 @@
     </script>
 </body>
 </html>
-
