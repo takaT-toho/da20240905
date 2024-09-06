@@ -94,6 +94,26 @@
             z-index: 11;
         }
 
+        #header-page {
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+            transform: scale(1);
+            color: #ffffff; /* 開始時と終了時は白色 */
+            }
+            10%, 40%, 70% {
+            transform: scale(3);
+            color: #ff0000; /* 拡大時の色 */
+            }
+            25%, 55%, 85% {
+            transform: scale(1);
+            color: #ff8800; /* 縮小時の色 */
+            }
+        }
+
         .progress-bar {
             height: 100%;
             width: 0;
@@ -537,12 +557,14 @@
         <audio id="biyonSound" src="biyon.mp3" hidden></audio>
         <audio id="kosokuSound" src="kosoku.mp3" hidden></audio>
         <audio id="taihouSound" src="taihou.mp3" hidden></audio>
+        <audio id="pagemekuriSound" src="pagemekuri.mp3" hidden></audio>
     </main>
 
 
     <script>
         let currentPage = 0;
         const rail = document.querySelector('.rail');
+        const headerPage = document.getElementById("header-page");
         const saveButton = document.querySelector('.save-button');
         const triangleButton = document.getElementById('triangle');
         const leftArrow = document.querySelector('.left-arrow');
@@ -586,6 +608,12 @@
             taihouSound.play(); // 音を再生
         }
 
+        function playPagemekuriSound() {
+            let pagemekuriSound = document.getElementById('pagemekuriSound');
+            pagemekuriSound.currentTime = 0; // 再生位置をリセット
+            pagemekuriSound.play(); // 音を再生
+        }
+
         leftArrow.handleArrowClick = function() {
             currentSentence = 0;
             currentPage--;
@@ -594,7 +622,7 @@
             } else if (currentPage < 0) {
                 currentPage = 0;
             }
-            document.getElementById("header-page").textContent = currentPage + 1;
+            headerPage.textContent = currentPage + 1;
             text = document.getElementById(pageNameList[currentPage]).textContent;
             sentences = text.match(/[^。！？]+[。！？]/g);
 
@@ -602,6 +630,8 @@
             if (currentPhrase) {
                 currentPhrase.style.animation = 'fadeOutToLeft 1s forwards';
                 // ページめくりの音
+                playPagemekuriSound();
+
                 currentPhrase.handleAnimationEnd = function() {
                     if (currentPhrase.parentNode === rail) {
                         rail.removeChild(currentPhrase);
@@ -614,7 +644,11 @@
                 currentPhrase.addEventListener('animationend', currentPhrase.handleAnimationEnd);
             }
 
-            // ページ番号が点滅するアニメーション
+            // ページ番号が点滅するアニメーション            
+            headerPage.style.animation = 'none';
+            setTimeout(() => {
+                headerPage.style.animation = 'pulse 3s ease-in-out forwards';
+            }, 10);
         }
 
         rightArrow.handleArrowClick = function() {
@@ -625,13 +659,16 @@
             } else if (currentPage < 0) {
                 currentPage = 0;
             }
-            document.getElementById("header-page").textContent = currentPage + 1;
+            headerPage.textContent = currentPage + 1;
             text = document.getElementById(pageNameList[currentPage]).textContent;
             sentences = text.match(/[^。！？]+[。！？]/g);
 
             const currentPhrase = rail.querySelector('.phrase');
             if (currentPhrase) {
                 currentPhrase.style.animation = 'fadeOutToLeft 1s forwards';
+                // ページめくりの音
+                playPagemekuriSound();
+
                 currentPhrase.handleAnimationEnd = function() {
                     if (currentPhrase.parentNode === rail) {
                         rail.removeChild(currentPhrase);
@@ -643,6 +680,12 @@
                 // アニメーションが終了したらフレーズを削除し、次のフレーズを表示
                 currentPhrase.addEventListener('animationend', currentPhrase.handleAnimationEnd);
             }
+
+            // ページ番号が点滅するアニメーション            
+            headerPage.style.animation = 'none';
+            setTimeout(() => {
+                headerPage.style.animation = 'pulse 3s ease-in-out forwards';
+            }, 10);
         }
 
         leftArrow.addEventListener('click', leftArrow.handleArrowClick);
